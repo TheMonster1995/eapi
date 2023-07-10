@@ -12,6 +12,7 @@ const itemSchema = mongoose.Schema({
 	status: String,
 	index: String,
   cafe_id: String,
+	item_img: String,
 })
 
 const Item = mongoose.model("Item", itemSchema);

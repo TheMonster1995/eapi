@@ -14,8 +14,7 @@ const {
   Order,
   Category,
   Item,
-  Cafe,
-  Client,
+  Cafe
 } = require('./models');
 
 const {
@@ -73,14 +72,11 @@ app.get('/auth', async (req, res) => {
     message: 'not_logged_in'
   });
 
-  const user = await User.find({user_id: result.data});
+  const user = await User.find({user_id: result.data})
   const { username, cafe_id } = user[0];
-  console.log(cafe_id);
-  const cafe = Cafe.find({cafe_id});
-  console.log(cafe);
 
   if (result != 'error')
-    return sendResponse(res, 200, 'logged_in', { username, cafe_id, settings: { header_url: cafe.img } }, null);
+    return sendResponse(res, 200, 'logged_in', { username, cafe_id }, null);
 
   return res.status(401).send({
     message: 'not_logged_in'
@@ -90,6 +86,8 @@ app.get('/auth', async (req, res) => {
 app.post('/login', async (req, res) => {
 
   let user = await User.find({ username: req.body.username.toLowerCase() });
+
+	console.log(user);
 
   if (user.length == 0) return sendResponse(res, 400, 'user_not_exist', null, 'user_does_not_exist');
 
@@ -104,10 +102,6 @@ app.post('/login', async (req, res) => {
 
   const accessToken = createJWT({ data: user.user_id, cafe_id: user.cafe_id }, '2h');
 
-  const cafe = Cafe.find({cafe_id: user.cafe_id});
-  console.log(user.cafe_id);
-  console.log(cafe);
-  
   return sendResponse(
     res,
     200,
@@ -115,21 +109,10 @@ app.post('/login', async (req, res) => {
     {
       accessToken,
       username: user.username,
-      cafe_id: user.cafe_id,
-      settings: {
-        header_url: cafe[0].img
-      }
+      cafe_id: user.cafe_id
     },
     null
   );
-})
-
-app.post('/client/token', async (req, res) => {
-  const phone_number = req.body.phone_number;
-
-  const client = await Client.find({phone_number});
-
-  if (!!client[0]) 
 })
 
 app.get('/update/:cafeid', isAuthorized, async (req, res) => {
@@ -149,8 +132,11 @@ app.get('/update/:cafeid', isAuthorized, async (req, res) => {
 
 app.get('/orders/:cafeid', isAuthorized, async (req, res) => {
   const orders = await Order.find({ status: 'submited', cafe_id: req.params.cafeid });
+	return sendResponse(res, 200, 'getting_orders', orders, null);
+})
 
-  return sendResponse(res, 200, 'getting_orders', orders, null);
+app.get('/images/:imgname', (req, res) => {
+	res.sendFile(path.join(__dirname, `./uploads/${req.params.imgname}`));
 })
 
 app.post('/order/new/:cafeid', async (req, res) => {
@@ -370,10 +356,13 @@ app.post('/item/img/:itemid/:cafeid', isAuthorized, upload.single('itemImg'), as
   const file = req.file;
   if (!file) return sendResponse(res, 400, 'error_uploading_file', null, 'error_uploading_file');
 
-  await Item.updateOne(
+  const someTemp = await Item.updateOne(
     { item_id: req.params.itemid, cafe_id },
     { $set: { img: file.path } }
   );
+
+	console.log('done');
+	console.log(someTemp);
 
   sendResponse(res, 200, 'img_updated', file.path, null);
 });
@@ -394,7 +383,7 @@ app.delete('/item/:itemid/:cafeid', isAuthorized, async (req, res) => {
   return sendResponse(res, 200, 'item_deleted', null, null);
 })
 
-const port = process.env.PORT || 4010;
+const port = process.env.PORT || 4060;
 
 const initData = async () => {
   let cat, item, children, items;
@@ -1405,8 +1394,8 @@ app.listen(port, async () => {
   let dbBackupTask = nodeCron.schedule('37 20 * * *', backUp);
   // const name = 'سان',
   //   cafe_id = 'sun';
-  // const name = 'هم/آسا',
-  //   cafe_id = 'ham_asa';
+  // const name = 'هم/بیکری',
+  //   cafe_id = 'ham_bakery';
   // const adminId = await injectUser(name, cafe_id);
   // injectCafe(name, cafe_id, adminId);
   // dbIdFixer();
