@@ -251,7 +251,7 @@ app.get('/menu/:cafeid', async (req, res) => {
       cat = cats[i];
     
     for (let j = 0; j < cat.children.length; j++) {
-      item = await Item.find({ cat: cat.cat_id, cafe_id, item_id: cat.children[j] });
+      item = await Item.find({ cat: cat.cat_id, cafe_id, item_id: cat.children[j]?.item_id ?? cat.children[j] });
       items.push(item[0]);
     }
 
