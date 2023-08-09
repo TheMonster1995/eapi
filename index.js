@@ -246,10 +246,16 @@ app.get('/menu/:cafeid', async (req, res) => {
     cats = await Category.find({ cafe_id });
 
   for (let i = 0; i < cats.length; i++) {
-    let items = [],
+    let item,
+      items = [],
       cat = cats[i];
+    
+    for (let j = 0; j < cat.children.length; j++) {
+      item = await Item.find({ cat: cat.cat_id, cafe_id, item_id: cat.children[j] });
+      items.push(item);
+    }
 
-    items = await Item.find({cat: cat.cat_id, cafe_id: cafe_id});
+    // items = await Item.find({cat: cat.cat_id, cafe_id});
     // for (let j = 0; j < cat.children.length; j++) {
     //   let item = await Item.find({cat: cat.cat_id});
     //   items.push(item[0]._doc);
