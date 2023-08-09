@@ -286,11 +286,13 @@ app.post('/cat/new/:cafeid', isAuthorized, async (req, res) => {
 
 app.put('/cat/:cafeid', isAuthorized, async (req, res) => {
   const cafe_id = req.params.cafeid;
-  await Category.updateOne(
-    { cat_id: req.body.catid, cafe_id },
-    { $set: { ...req.body.catdata } }
-  )
-  if (!req.body.indexdata) return sendResponse(res, 200, 'cat_updated', null, null);
+  if (!req.body.indexdata) {
+    await Category.updateOne(
+      { cat_id: req.body.catid, cafe_id },
+      { $set: { ...req.body.catdata } }
+    )
+    return sendResponse(res, 200, 'cat_updated', null, null);
+  }
 
   let indexData = req.body.indexdata;
 
@@ -301,7 +303,7 @@ app.put('/cat/:cafeid', isAuthorized, async (req, res) => {
     )
   }
 
-  return sendResponse(res, 200, 'cat_updated', null, null)
+  return sendResponse(res, 200, 'cats_updated', null, null)
 })
 
 app.delete('/cat/:catid/:cafeid', isAuthorized, async (req, res) => {
