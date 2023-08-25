@@ -39,7 +39,7 @@ const {
   checkJWT
 } = require('./src/jwt');
 
-const storage = multer.diskStorage({
+const itemStorage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, 'uploads')
   },
@@ -47,8 +47,19 @@ const storage = multer.diskStorage({
     cb(null, req.params?.itemid ? `${req.params?.cafeid}_${req.params?.itemid}${file.originalname.match(/\.[a-zA-Z0-9]*$/)[0]}` : file.fieldname)
   }
 })
+
+const cafeStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'cafes')
+  },
+  filename: function (req, file, cb) {
+    cb(null, `${req.params?.cafeid}${new Date().toISOString()}${file.originalname.match(/\.[a-zA-Z0-9]*$/)[0]}`)
+  }
+})
  
-const upload = multer({ storage: storage })
+const uploadItem = multer({ storage: itemStorage });
+const uploadCafe = multer({ storage: cafeStorage });
+
 //This needs security
 
 const app = express();
@@ -137,6 +148,48 @@ app.get('/orders/:cafeid', isAuthorized, async (req, res) => {
 
 app.get('/images/:imgname', (req, res) => {
 	res.sendFile(path.join(__dirname, `./uploads/${req.params.imgname}`));
+})
+
+app.get('/cafe/img/:cafeid', async (req, res) => {
+  const cafe = await Cafe.find({ cafe_id: req.params.cafeid });
+  if (!cafe[0]?.img) return sendResponse(res, 404, 'image_not_found', null, null);
+  res.sendFile(path.join(__dirname, `./uploads/${cafe[0].img}`));
+})
+
+app.get('/cafe/:cafeid', async (req, res) => {
+  let cafe = await Cafe.find({ cafe_id: req.params.cafeid });
+  if (!cafe[0]) return sendResponse(res, 404, 'cafe_not_found', null, null);
+  cafe = cafe[0];
+  const result = {
+    cafe_id: cafe.cafe_id,
+    name: cafe.name,
+    address: cafe.address,
+    phone: cafe.phone,
+    location: cafe.location,
+  };
+  sendResponse(res, 200, 'getting_cafe', result, null);
+})
+
+app.put('/cafe/:cafeid', isAuthorized, async (req, res) => {
+  //check cafeid and userid relation
+  await Cafe.updateOne(
+    { cafe_id: req.params.cafeid },
+    { $set: { ...req.body.cafe } }
+  );
+
+  return sendResponse(res, 200, 'cafe_updated', null, null);
+})
+
+app.post('/cafe/img/:cafeid', isAuthorized, uploadCafe.single('cafeImg'), async (req, res) => {
+  //check cafeid and userid relation
+  const file = req.file;
+  if (!file) return sendResponse(res, 400, 'error_uploading_file', null, 'error_uploading_file');
+  await Cafe.updateOne(
+    { cafe_id: req.params.cafeid },
+    { $set: { img: file.path } }
+  )
+
+  sendResponse(res, 200, 'cafe_image_updated', file.path, null);
 })
 
 app.post('/order/new/:cafeid', async (req, res) => {
@@ -359,7 +412,7 @@ app.put('/item/:cafeid', isAuthorized, async (req, res) => {
   return sendResponse(res, 200, 'item_updated', null, null)
 })
 
-app.post('/item/img/:itemid/:cafeid', isAuthorized, upload.single('itemImg'), async (req, res) => {
+app.post('/item/img/:itemid/:cafeid', isAuthorized, uploadItem.single('itemImg'), async (req, res) => {
   const cafe_id = req.params.cafeid;
   const file = req.file;
   if (!file) return sendResponse(res, 400, 'error_uploading_file', null, 'error_uploading_file');
@@ -368,9 +421,6 @@ app.post('/item/img/:itemid/:cafeid', isAuthorized, upload.single('itemImg'), as
     { item_id: req.params.itemid, cafe_id },
     { $set: { img: file.path } }
   );
-
-	console.log('done');
-	console.log(someTemp);
 
   sendResponse(res, 200, 'img_updated', file.path, null);
 });
