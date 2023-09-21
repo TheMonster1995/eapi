@@ -153,7 +153,7 @@ app.get('/images/:imgname', (req, res) => {
 app.get('/cafe/img/:cafeid', async (req, res) => {
   const cafe = await Cafe.find({ cafe_id: req.params.cafeid });
   if (!cafe[0]?.img) return sendResponse(res, 404, 'image_not_found', null, null);
-  res.sendFile(path.join(__dirname, `./uploads/${cafe[0].img}`));
+  res.sendFile(path.join(__dirname, `./${cafe[0].img}`));
 })
 
 app.get('/cafe/:cafeid', async (req, res) => {
