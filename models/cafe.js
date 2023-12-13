@@ -8,6 +8,7 @@ const cafeSchema = mongoose.Schema({
 	location: String,
 	admin: String,
   img: String,
+  counterActive: Boolean,
 	signup_date: Date
 })
 

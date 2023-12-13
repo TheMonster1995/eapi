@@ -166,6 +166,7 @@ app.get('/cafe/:cafeid', async (req, res) => {
     address: cafe.address,
     phone: cafe.phone,
     location: cafe.location,
+    counterActive: cafe.counterActive,
   };
   sendResponse(res, 200, 'getting_cafe', result, null);
 })
